@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PATINHAS PREMIADAS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* =====================================================================
+   PARA EDITAR O JOGO, veja o bloco <script> lá embaixo, seção "CONFIG".
+   É lá que você muda o nome dela, o bichinho, as perguntas do quiz e os 5 presentes.
+   ===================================================================== */
+
+:root{
+  --sky-1: #cdeeff;
+  --sky-2: #fff1e6;
+  --grass-1: #b7e78d;
+  --grass-2: #8fd46a;
+  --coral: #ff6f5e;
+  --coral-dark: #e2503f;
+  --gold: #ffc93c;
+  --purple: #7c5cff;
+  --plum: #4a1942;
+  --white: #fffaf6;
+  --green: #06d6a0;
+  --green-dark: #04a87c;
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:inherit;}
+html{scroll-padding-top: env(safe-area-inset-top, 0px);}
+html,body{height:100%;}
+body{
+  margin:0;
+  min-height:100%;
+  font-family:'Quicksand', sans-serif;
+  background: linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 46%, var(--sky-2) 100%);
+  color: var(--plum);
+  overflow-x:hidden;
+  position:relative;
+}
+
+.cloud{
+  position:fixed;
+  top: var(--top, 8%);
+  left: var(--left, 10%);
+  font-size: 32px;
+  opacity:.8;
+  pointer-events:none;
+  animation: float-cloud 14s ease-in-out infinite;
+  z-index:0;
+}
+@keyframes float-cloud{
+  0%,100%{ transform: translateX(0); }
+  50%{ transform: translateX(18px); }
+}
+
+.wrap{
+  position:relative;
+  z-index:1;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+  text-align:center;
+}
+
+.eyebrow-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  background: var(--white);
+  border: 2px dashed var(--coral);
+  color: var(--coral-dark);
+  font-weight:700;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  box-shadow: 0 3px 0 rgba(0,0,0,.05);
+}
+
+h1{
+  font-family:'Baloo 2', sans-serif;
+  font-weight:800;
+  font-size: clamp(26px, 7vw, 38px);
+  line-height:1.05;
+  margin: 14px 0 6px;
+  color: var(--plum);
+  text-shadow: 3px 3px 0 rgba(255,255,255,.7);
+}
+h1 .accent{ color: var(--coral-dark); }
+
+.subtitle{
+  font-size: clamp(14.5px, 3.3vw, 16.5px);
+  font-weight:600;
+  color:#6b3a5a;
+  max-width: 400px;
+  margin: 0 auto 4px;
+  line-height:1.5;
+}
+
+/* fileira de coracoes com preenchimento parcial */
+.hearts-row{
+  margin-top: 20px;
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap: 8px;
+}
+.heart-slot{
+  position:relative;
+  width: 32px;
+  height: 32px;
+  font-size: 25px;
+  filter: drop-shadow(0 2px 0 rgba(0,0,0,.08));
+}
+.heart-slot .h-empty{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  opacity:.4;
+}
+.heart-slot .h-full{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  clip-path: inset(100% 0 0 0);
+  transition: clip-path .35s ease;
+}
+.heart-slot.pop .h-full{ animation: heart-pop .5s cubic-bezier(.34,1.56,.64,1); }
+@keyframes heart-pop{
+  0%{ transform: scale(.85); }
+  55%{ transform: scale(1.25); }
+  100%{ transform: scale(1); }
+}
+
+.hearts-label{
+  margin-top: 8px;
+  font-weight:700;
+  font-size: 13px;
+  color: var(--coral-dark);
+}
+
+/* bichinho pequeno */
+.stage{
+  margin: 18px auto 6px;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, var(--grass-1) 0%, var(--grass-2) 100%);
+  border: 5px solid var(--white);
+  box-shadow: 0 6px 0 rgba(0,0,0,.06), 0 8px 16px rgba(0,0,0,.08);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+}
+.pet{
+  font-size: 46px;
+  animation: idle-wag 2.4s ease-in-out infinite;
+  transform-origin: 50% 85%;
+}
+@keyframes idle-wag{
+  0%,100%{ transform: rotate(-3deg) translateY(0); }
+  50%{ transform: rotate(3deg) translateY(-2px); }
+}
+.pet.eating{ animation: eat-bounce .55s ease; }
+@keyframes eat-bounce{
+  0%{ transform: scale(1) rotate(0deg); }
+  30%{ transform: scale(1.18) rotate(-6deg); }
+  60%{ transform: scale(.92) rotate(4deg); }
+  100%{ transform: scale(1) rotate(0deg); }
+}
+
+/* card do quiz */
+.quiz-card{
+  margin-top: 18px;
+  background: var(--white);
+  border: 2px solid rgba(255,201,60,.6);
+  border-radius: 22px;
+  padding: 22px 18px;
+  box-shadow: 0 6px 0 rgba(0,0,0,.05), 0 10px 18px rgba(0,0,0,.06);
+}
+.quiz-progress{
+  font-size:12.5px;
+  font-weight:700;
+  color:#a883a0;
+  margin-bottom:8px;
+}
+.quiz-question{
+  font-family:'Baloo 2', sans-serif;
+  font-weight:700;
+  font-size: clamp(17px, 4.4vw, 20px);
+  color: var(--plum);
+  margin-bottom: 16px;
+  line-height:1.3;
+}
+.options{
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+}
+.option-btn{
+  all:unset;
+  cursor:pointer;
+  font-family:'Quicksand', sans-serif;
+  font-weight:700;
+  font-size: 15px;
+  color: var(--plum);
+  background: #fff6ee;
+  border: 2px solid #ffe1c7;
+  border-radius: 14px;
+  padding: 12px 14px;
+  text-align:left;
+  transition: transform .12s ease, background .2s ease, border-color .2s ease;
+}
+.option-btn:active{ transform: scale(.98); }
+.option-btn:disabled{ cursor:default; }
+.option-btn.correct{
+  background: #e5faf3;
+  border-color: var(--green);
+  color: var(--green-dark);
+}
+.option-btn.wrong{
+  background: #ffe9e6;
+  border-color: var(--coral);
+  color: var(--coral-dark);
+}
+
+.feedback{
+  margin-top: 14px;
+  font-weight:700;
+  font-size: 14.5px;
+  min-height: 20px;
+}
+.feedback.correct{ color: var(--green-dark); }
+.feedback.wrong{ color: var(--coral-dark); }
+
+.celebrate-banner{
+  margin-top: 20px;
+  background: var(--white);
+  border: 2px solid var(--gold);
+  border-radius: 20px;
+  padding: 16px 18px;
+  font-family:'Baloo 2', sans-serif;
+  font-weight:700;
+  font-size: clamp(15px, 3.8vw, 18px);
+  color: var(--coral-dark);
+  display:none;
+  box-shadow: 0 6px 0 #e8b62f;
+}
+.celebrate-banner.show{ display:block; animation: pop-in .5s cubic-bezier(.34,1.56,.64,1); }
+@keyframes pop-in{
+  0%{ transform: scale(.7); opacity:0; }
+  100%{ transform: scale(1); opacity:1; }
+}
+
+.reset-btn{
+  all:unset;
+  cursor:pointer;
+  margin-top: 16px;
+  font-family:'Baloo 2', sans-serif;
+  font-weight:700;
+  font-size:14px;
+  color: var(--white);
+  background: var(--purple);
+  padding: 10px 22px;
+  border-radius: 999px;
+  box-shadow: 0 5px 0 #5b3fd6;
+  transition: transform .15s ease;
+  display:none;
+}
+.reset-btn.show{ display:inline-flex; }
+.reset-btn:active{ transform: translateY(3px); box-shadow: 0 2px 0 #5b3fd6; }
+
+/* modal de presente */
+.overlay{
+  position:fixed;
+  inset:0;
+  background: rgba(74,25,66,.45);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:10;
+  padding: 20px;
+}
+.overlay.show{ display:flex; }
+.gift-card{
+  background: var(--white);
+  border: 3px solid var(--gold);
+  border-radius: 26px;
+  padding: 30px 26px 24px;
+  max-width: 320px;
+  width:100%;
+  text-align:center;
+  box-shadow: 0 10px 0 #e8b62f, 0 16px 30px rgba(0,0,0,.2);
+  animation: pop-in .45s cubic-bezier(.34,1.56,.64,1);
+}
+.gift-eyebrow{
+  font-family:'Baloo 2', sans-serif;
+  font-weight:700;
+  font-size: 13.5px;
+  color: var(--coral-dark);
+}
+.gift-emoji{ font-size: 50px; margin: 10px 0 6px; }
+.gift-text{
+  font-family:'Baloo 2', sans-serif;
+  font-weight:700;
+  font-size: clamp(17px, 4.8vw, 20px);
+  color: var(--plum);
+  line-height:1.3;
+  margin-bottom: 18px;
+}
+.gift-close{
+  all:unset;
+  cursor:pointer;
+  font-family:'Baloo 2', sans-serif;
+  font-weight:700;
+  font-size:14.5px;
+  color: var(--white);
+  background: var(--coral);
+  padding: 11px 26px;
+  border-radius: 999px;
+  box-shadow: 0 5px 0 var(--coral-dark);
+  transition: transform .15s ease;
+}
+.gift-close:active{ transform: translateY(3px); box-shadow: 0 2px 0 var(--coral-dark); }
+
+.confetti-piece{
+  position:fixed;
+  top:-20px;
+  z-index:15;
+  pointer-events:none;
+  font-size: 20px;
+  animation: fall linear forwards;
+}
+@keyframes fall{
+  to{ transform: translateY(110vh) rotate(360deg); opacity:.9; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .pet, .cloud, .confetti-piece{ animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <span class="eyebrow-badge"> 🐾 PATINHAS PREMIADAS 🐾</span>
+  <h1 id="titulo">Perguntas <span class="accent">Premiadas</span></h1>
+  <p class="subtitle" id="subtitulo">Cada resposta enche um coração, <span id="nome-inline">amor</span> — a cada coração completo ganhe um  🎁  (nesse você ganha a recompensa amor rs	)</p>
+
+  <div class="hearts-row" id="heartsRow"></div>
+  <div class="hearts-label" id="heartsLabel">0/0 corações completos</div>
+
+  <div class="stage"><div class="pet" id="pet">🐶</div></div>
+
+  <div class="quiz-card" id="quizCard">
+    <div class="quiz-progress" id="quizProgress">Pergunta 1 de 10</div>
+    <div class="quiz-question" id="quizQuestion">Pergunta</div>
+    <div class="options" id="quizOptions"></div>
+    <div class="feedback" id="quizFeedback"></div>
+  </div>
+
+  <div class="celebrate-banner" id="celebrateBanner">🎉 Você completou o quiz e encheu todos os corações! Agora é só cobrar cada presente 😘</div>
+  <button class="reset-btn" id="resetBtn">🔄 jogar de novo</button>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="gift-card">
+    <div class="gift-eyebrow">coração completo!</div>
+    <div class="gift-emoji" id="giftEmoji">🎁</div>
+    <div class="gift-text" id="giftText">Presente</div>
+    <button class="gift-close" id="giftClose">uhuul, continuar</button>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   CONFIG — edite só aqui pra personalizar o jogo
+   ===================================================================== */
+
+const NOME_DELA = "amor";        // apelido/nome dela
+const BICHINHO_EMOJI = "🐶";     // troca o emoji do bichinho se quiser (🐱 🐰 🐹...)
+
+// Perguntas do quiz sobre o casal.
+// "correta" é o INDEX da opção certa na lista "opcoes" (0 = primeira opção).
+// Elas se dividem igualmente entre os 5 presentes, na ordem em que aparecem aqui
+// (as 2 primeiras enchem o 1º coração, as 2 seguintes o 2º, e assim por diante).
+const QUIZ = [
+  { pergunta: "Onde foi o nosso primeiro encontro?", opcoes: ["Parque vincentina aranha", "Cinema", "Point", "Show do barão vermelho"], correta: 0 },
+  { pergunta: "Que dia demos nosso primeiro beijo?", opcoes: ["Dia 23 de julho", "Dia 22 de julho", "Agora", "Dia 4 de novembro"], correta: 1 },
+
+  { pergunta: "Qual é o meu doce favorito", opcoes: ["Açaí", "Brigadeiro", "Sagu", "Pudim"], correta: 3 },
+  { pergunta: "Qual melhor série que nós vimos juntos?", opcoes: ["Stranger things", "A do espião", "The Good place", "Gumball"], correta: 2 },
+
+  { pergunta: "Qual é o meu apelido carinhoso favorito?", opcoes: ["Nenem", "Amor", "Vida", "Bebê"], correta: 0 },
+  { pergunta: "Qual foi a primeira bebida que tomamos juntos?", opcoes: ["Draft", "Suco", "Ice", "Canelinha"], correta: 0 },
+
+  { pergunta: "Qual foi a nossa primeira viagem ou o rolê mais marcante?", opcoes: ["Taubáte", "Campinas", "Guararema", "Praia"], correta: 3 },
+  { pergunta: "Qual foi o estilo da música do primeiro stories que postei com vc?", opcoes: ["Rock", "Rap", "Pagode", "MPB"], correta: 2 },
+
+  { pergunta: "A quanto tempo estamos namorando rs?", opcoes: ["1 dia", "11 meses", "2 anos", "1 ano"], correta: 3 },
+  { pergunta: "Dada a função f(x) = 3x² + 5x - 2, qual é a sua derivada f'(x)?", opcoes: [" f'(x) = 6x + 5", " f'(x) = 6x x 9", " f'(x) = 6x - 5", " f'(x) = 6x + 585"], correta: 0 }
+];
+
+// Lista de presentes: um presente por coração (5 no total).
+const PRESENTES = [
+  { emoji: "👚", texto: "Primeiro presente" },
+  { emoji: "❄️", texto: "Segundo presente" },
+  { emoji: "💌", texto: "Terceiro presente" },
+  { emoji: "🖼️", texto: "Quarto presente" },
+  { emoji: "🌇", texto: "Quinto presente" }
+];
+
+/* ===================================================================== */
+
+document.getElementById("nome-inline").textContent = NOME_DELA;
+document.getElementById("pet").textContent = BICHINHO_EMOJI;
+
+const heartsRow = document.getElementById("heartsRow");
+const heartsLabel = document.getElementById("heartsLabel");
+const pet = document.getElementById("pet");
+const quizCard = document.getElementById("quizCard");
+const quizProgress = document.getElementById("quizProgress");
+const quizQuestion = document.getElementById("quizQuestion");
+const quizOptions = document.getElementById("quizOptions");
+const quizFeedback = document.getElementById("quizFeedback");
+const celebrateBanner = document.getElementById("celebrateBanner");
+const resetBtn = document.getElementById("resetBtn");
+const overlay = document.getElementById("overlay");
+const giftEmoji = document.getElementById("giftEmoji");
+const giftText = document.getElementById("giftText");
+const giftClose = document.getElementById("giftClose");
+
+const totalHearts = PRESENTES.length;
+const totalQuestions = QUIZ.length;
+const perguntasPorCoracao = Math.max(1, Math.ceil(totalQuestions / totalHearts));
+
+let qIndex = 0;      // pergunta atual (0-based, geral)
+let answeredHere = 0; // respondidas dentro do coração atual
+let heartsFilled = 0;
+let locked = false;
+
+function buildHearts(){
+  heartsRow.innerHTML = "";
+  for(let i=0;i<totalHearts;i++){
+    const slot = document.createElement("div");
+    slot.className = "heart-slot";
+    slot.innerHTML = '<span class="h-empty">🤍</span><span class="h-full">❤️</span>';
+    heartsRow.appendChild(slot);
+  }
+}
+
+function setHeartFill(index, pct){
+  const slot = heartsRow.children[index];
+  if(!slot) return;
+  slot.querySelector(".h-full").style.clipPath = "inset(" + (100 - pct) + "% 0 0 0)";
+}
+
+function updateHeartsLabel(){
+  heartsLabel.textContent = heartsFilled + "/" + totalHearts + " corações completos";
+}
+
+function renderQuestion(){
+  if(qIndex >= totalQuestions){
+    quizCard.style.display = "none";
+    return;
+  }
+  const item = QUIZ[qIndex];
+  quizProgress.textContent = "Pergunta " + (qIndex + 1) + " de " + totalQuestions;
+  quizQuestion.textContent = item.pergunta;
+  quizFeedback.textContent = "";
+  quizFeedback.className = "feedback";
+  quizOptions.innerHTML = "";
+
+  item.opcoes.forEach((op, i) => {
+    const btn = document.createElement("button");
+    btn.className = "option-btn";
+    btn.textContent = op;
+    btn.addEventListener("click", () => selectOption(i));
+    quizOptions.appendChild(btn);
+  });
+}
+
+function burstConfetti(){
+  const emojis = ["🎉","✨","💖","🐾","🎊"];
+  for(let i=0;i<24;i++){
+    const piece = document.createElement("div");
+    piece.className = "confetti-piece";
+    piece.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    piece.style.left = Math.random()*100 + "vw";
+    piece.style.animationDuration = (2.4 + Math.random()*1.6) + "s";
+    piece.style.fontSize = (14 + Math.random()*14) + "px";
+    document.body.appendChild(piece);
+    setTimeout(()=>piece.remove(), 4200);
+  }
+}
+
+function selectOption(i){
+  if(locked) return;
+  locked = true;
+
+  const item = QUIZ[qIndex];
+  const buttons = quizOptions.querySelectorAll(".option-btn");
+  buttons.forEach(b => b.disabled = true);
+
+  if(i === item.correta){
+    buttons[i].classList.add("correct");
+    quizFeedback.textContent = "🎉 Isso mesmo!";
+    quizFeedback.classList.add("correct");
+  } else {
+    buttons[i].classList.add("wrong");
+    buttons[item.correta].classList.add("correct");
+    quizFeedback.textContent = "😅 Quase! Era essa aí ↑";
+    quizFeedback.classList.add("wrong");
+  }
+
+  pet.classList.remove("eating");
+  void pet.offsetWidth;
+  pet.classList.add("eating");
+
+  answeredHere++;
+  const currentHeart = Math.min(heartsFilled, totalHearts - 1);
+  const pct = Math.min(100, (answeredHere / perguntasPorCoracao) * 100);
+  setHeartFill(currentHeart, pct);
+
+  const heartDone = answeredHere >= perguntasPorCoracao;
+
+  setTimeout(() => {
+    qIndex++;
+
+    if(heartDone && heartsFilled < totalHearts){
+      const slot = heartsRow.children[heartsFilled];
+      slot.classList.add("pop");
+      const presente = PRESENTES[heartsFilled];
+      heartsFilled++;
+      answeredHere = 0;
+      updateHeartsLabel();
+
+      giftEmoji.textContent = presente.emoji;
+      giftText.textContent = presente.texto;
+      overlay.classList.add("show");
+      locked = true; // continua travado até fechar o presente
+    } else {
+      locked = false;
+      renderQuestion();
+    }
+
+    if(qIndex >= totalQuestions){
+      quizCard.style.display = "none";
+    }
+  }, 1100);
+}
+
+giftClose.addEventListener("click", () => {
+  overlay.classList.remove("show");
+  locked = false;
+
+  if(heartsFilled >= totalHearts || qIndex >= totalQuestions){
+    quizCard.style.display = "none";
+    celebrateBanner.classList.add("show");
+    resetBtn.classList.add("show");
+    burstConfetti();
+  } else {
+    renderQuestion();
+  }
+});
+
+resetBtn.addEventListener("click", () => {
+  qIndex = 0;
+  answeredHere = 0;
+  heartsFilled = 0;
+  locked = false;
+  celebrateBanner.classList.remove("show");
+  resetBtn.classList.remove("show");
+  quizCard.style.display = "block";
+  buildHearts();
+  updateHeartsLabel();
+  renderQuestion();
+});
+
+// nuvens de fundo
+const cloudPositions = [
+  {top:"5%", left:"8%"}, {top:"10%", left:"75%"}, {top:"3%", left:"45%"}
+];
+cloudPositions.forEach((p, i) => {
+  const c = document.createElement("div");
+  c.className = "cloud";
+  c.textContent = "☁️";
+  c.style.setProperty("--top", p.top);
+  c.style.setProperty("--left", p.left);
+  c.style.animationDelay = (i * 1.3) + "s";
+  document.body.appendChild(c);
+});
+
+buildHearts();
+updateHeartsLabel();
+renderQuestion();
+</script>
+</body>
+</html>
